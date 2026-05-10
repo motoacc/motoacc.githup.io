@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>กระทบยอด Statement vs POS — Moto Addict Finance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Sarabun', sans-serif; }
+    .tab-btn.active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: 600; }
+    @media print { .no-print { display: none !important; } }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <!-- Alert -->
+  <div id="alert" class="hidden fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium"></div>
+  <!-- Loading -->
+  <div id="loading" class="hidden fixed inset-0 z-40 bg-black bg-opacity-30 flex items-center justify-center">
+    <div class="bg-white rounded-2xl p-6 text-center shadow-xl">
+      <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+      <p class="text-gray-700 font-medium">กำลังประมวลผล...</p>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="bg-white shadow-sm border-b border-gray-200 no-print">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center gap-3">
+      <a href="index.html" class="text-gray-400 hover:text-gray-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </a>
+      <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold text-gray-900">กระทบยอด Statement vs POS</h1>
+        <p class="text-xs text-gray-500">Bank Reconciliation — เปรียบเทียบ Bank Statement กับ POS อัตโนมัติ</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6 no-print">
+
+    <!-- Step 1: Setup -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+      <!-- Upload Bank CSV -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h2 class="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <span class="w-6 h-6 bg-blue-100 text-blue-700 rounded-full text-xs font-bold flex items-center justify-center">1</span>
+          Upload Bank Statement (CSV/Excel)
+        </h2>
+
+        <div id="dropzone"
+          class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+          onclick="document.getElementById('csvFile').click()">
+          <svg class="w-10 h-10 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+          </svg>
+          <p class="text-gray-500 text-sm">คลิกเพื่อเลือกไฟล์ หรือลากมาวางที่นี่</p>
+          <p class="text-gray-400 text-xs mt-1">รองรับ .csv, .txt (UTF-8 หรือ TIS-620)</p>
+        </div>
+        <input type="file" id="csvFile" accept=".csv,.txt" class="hidden" onchange="handleCSVUpload(this)">
+
+        <!-- Column Mapping (shown after upload) -->
+        <div id="columnMapper" class="hidden mt-4 space-y-3">
+          <p class="text-sm font-semibold text-gray-700">กรุณาเลือก Column ที่ตรงกับข้อมูล:</p>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-xs text-gray-500 block mb-1">Column วันที่</label>
+              <select id="colDate" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"></select>
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 block mb-1">Column จำนวนเงิน (รับ/จ่าย)</label>
+              <select id="colAmount" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400"></select>
+            </div>
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 block mb-1">Column รายละเอียด (ถ้ามี)</label>
+            <select id="colDesc" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400">
+              <option value="-1">— ไม่มี —</option>
+            </select>
+          </div>
+          <div id="csvPreview" class="bg-gray-50 rounded-lg p-3 text-xs text-gray-600 overflow-x-auto max-h-32 overflow-y-auto"></div>
+        </div>
+      </div>
+
+      <!-- Load POS Data -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h2 class="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+          <span class="w-6 h-6 bg-blue-100 text-blue-700 rounded-full text-xs font-bold flex items-center justify-center">2</span>
+          ดึงข้อมูล POS จาก Google Sheets
+        </h2>
+
+        <div class="space-y-3">
+          <div>
+            <label class="text-sm text-gray-600 block mb-1">เดือนที่ต้องการกระทบยอด</label>
+            <input type="month" id="selectedMonth" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400">
+          </div>
+          <div>
+            <label class="text-sm text-gray-600 block mb-1">สาขา (ไม่บังคับ)</label>
+            <select id="selectedBranch" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400">
+              <option value="">ทุกสาขา</option>
+            </select>
+          </div>
+          <button onclick="loadPOSData()" class="w-full bg-blue-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
+            โหลดข้อมูล POS
+          </button>
+          <div id="posStatus" class="hidden text-sm text-center py-2 rounded-lg"></div>
+        </div>
+
+        <!-- Tolerance Setting -->
+        <div class="mt-4 pt-4 border-t border-gray-100">
+          <label class="text-xs text-gray-500 block mb-1">ค่าความต่างที่ยอมรับได้ (บาท)</label>
+          <input type="number" id="tolerance" value="1" min="0" max="100" step="0.01"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-400">
+          <p class="text-xs text-gray-400 mt-1">ค่าเริ่มต้น: ±1 บาท (สำหรับกรณีปัดเศษ)</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Run Reconciliation Button -->
+    <div class="text-center mb-6">
+      <button onclick="runReconciliation()"
+        class="bg-blue-600 text-white px-10 py-3 rounded-xl text-base font-bold hover:bg-blue-700 transition-colors shadow-md">
+        เริ่มกระทบยอดอัตโนมัติ
+      </button>
+    </div>
+
+    <!-- Results Section -->
+    <div id="resultsSection" class="hidden">
+
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-green-50 border border-green-200 rounded-2xl p-4 text-center">
+          <p class="text-3xl font-bold text-green-700" id="sumMatched">0</p>
+          <p class="text-sm text-green-600 mt-1">Matched</p>
+        </div>
+        <div class="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 text-center">
+          <p class="text-3xl font-bold text-yellow-700" id="sumBankOnly">0</p>
+          <p class="text-sm text-yellow-600 mt-1">ธนาคารเท่านั้น</p>
+        </div>
+        <div class="bg-red-50 border border-red-200 rounded-2xl p-4 text-center">
+          <p class="text-3xl font-bold text-red-700" id="sumPOSOnly">0</p>
+          <p class="text-sm text-red-600 mt-1">POS เท่านั้น</p>
+        </div>
+        <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-center">
+          <p class="text-xl font-bold text-blue-700" id="sumDiff">0</p>
+          <p class="text-sm text-blue-600 mt-1">ส่วนต่างยอดรวม</p>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+        <div class="flex border-b border-gray-100">
+          <button class="tab-btn active px-6 py-3 text-sm" onclick="showTab('matched')" id="tab-matched">
+            ✅ Matched (<span id="cnt-matched">0</span>)
+          </button>
+          <button class="tab-btn px-6 py-3 text-sm text-gray-500" onclick="showTab('bankonly')" id="tab-bankonly">
+            ⚠️ ธนาคารเท่านั้น (<span id="cnt-bankonly">0</span>)
+          </button>
+          <button class="tab-btn px-6 py-3 text-sm text-gray-500" onclick="showTab('posonly')" id="tab-posonly">
+            ❌ POS เท่านั้น (<span id="cnt-posonly">0</span>)
+          </button>
+        </div>
+
+        <!-- Table: Matched -->
+        <div id="pane-matched" class="p-4 overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-xs text-gray-500 border-b border-gray-100">
+                <th class="pb-2 pr-4">วันที่ (ธนาคาร)</th>
+                <th class="pb-2 pr-4">จำนวน (ธนาคาร)</th>
+                <th class="pb-2 pr-4">รายละเอียด</th>
+                <th class="pb-2 pr-4">วันที่ (POS)</th>
+                <th class="pb-2 pr-4">จำนวน (POS)</th>
+                <th class="pb-2">สาขา</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-matched"></tbody>
+          </table>
+        </div>
+
+        <!-- Table: Bank Only -->
+        <div id="pane-bankonly" class="hidden p-4 overflow-x-auto">
+          <p class="text-sm text-yellow-700 bg-yellow-50 rounded-lg p-3 mb-3">
+            รายการเหล่านี้มีในธนาคารแต่ไม่พบใน POS — อาจลืมบันทึก POS หรือเป็นรายการที่ไม่ใช่ยอดขาย
+          </p>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-xs text-gray-500 border-b border-gray-100">
+                <th class="pb-2 pr-4">วันที่</th>
+                <th class="pb-2 pr-4">จำนวนเงิน</th>
+                <th class="pb-2">รายละเอียด</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-bankonly"></tbody>
+          </table>
+        </div>
+
+        <!-- Table: POS Only -->
+        <div id="pane-posonly" class="hidden p-4 overflow-x-auto">
+          <p class="text-sm text-red-700 bg-red-50 rounded-lg p-3 mb-3">
+            รายการเหล่านี้มีใน POS แต่ไม่พบใน Bank Statement — อาจยังไม่เคลียร์เงิน หรือข้อผิดพลาดใน POS
+          </p>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left text-xs text-gray-500 border-b border-gray-100">
+                <th class="pb-2 pr-4">วันที่</th>
+                <th class="pb-2 pr-4">จำนวนเงิน</th>
+                <th class="pb-2 pr-4">รายละเอียด</th>
+                <th class="pb-2 pr-4">Ref No.</th>
+                <th class="pb-2">สาขา</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-posonly"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-3 mt-4">
+        <button onclick="exportCSV()" class="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-xl text-sm font-medium hover:bg-gray-50">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          Export CSV
+        </button>
+        <button onclick="saveLog()" class="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+          </svg>
+          บันทึก Log ลง Sheets
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="config.js"></script>
+  <script>
+    let bankData = [];
+    let posData  = [];
+    let results  = { matched: [], bankOnly: [], posOnly: [] };
+    let csvHeaders = [];
+    let csvRows    = [];
+
+    // Init
+    document.getElementById('selectedMonth').value = currentMonth();
+    CONFIG.BRANCHES.forEach(b => {
+      document.getElementById('selectedBranch').innerHTML +=
+        `<option value="${b}">${b}</option>`;
+    });
+
+    // ─── CSV Upload ────────────────────────────────────────
+    function handleCSVUpload(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => parseCSV(e.target.result);
+      // Try UTF-8 first, TIS-620 fallback handled by user
+      reader.readAsText(file, 'UTF-8');
+      document.getElementById('dropzone').innerHTML =
+        `<p class="text-green-600 font-semibold">✅ ${file.name}</p><p class="text-gray-400 text-xs mt-1">กำลังอ่านไฟล์...</p>`;
+    }
+
+    function parseCSV(text) {
+      const lines = text.trim().split('\n').filter(l => l.trim());
+      if (lines.length < 2) { showAlert('ไฟล์ CSV ว่างเปล่าหรือมีแค่ header', 'error'); return; }
+
+      const delimiter = lines[0].includes('\t') ? '\t' : ',';
+      csvHeaders = lines[0].split(delimiter).map(h => h.replace(/"/g, '').trim());
+      csvRows    = lines.slice(1).map(l =>
+        l.split(delimiter).map(c => c.replace(/"/g, '').trim())
+      );
+
+      // Populate column selectors
+      const options = csvHeaders.map((h, i) => `<option value="${i}">${h}</option>`).join('');
+      document.getElementById('colDate').innerHTML   = options;
+      document.getElementById('colAmount').innerHTML = options;
+      document.getElementById('colDesc').innerHTML   = '<option value="-1">— ไม่มี —</option>' + options;
+
+      // Auto-detect columns (heuristic)
+      const dateIdx   = csvHeaders.findIndex(h => /date|วัน|Date/i.test(h));
+      const amountIdx = csvHeaders.findIndex(h => /amount|จำนวน|เงิน|credit|debit|Amount/i.test(h));
+      const descIdx   = csvHeaders.findIndex(h => /desc|detail|รายการ|รายละเอียด/i.test(h));
+      if (dateIdx   >= 0) document.getElementById('colDate').value   = dateIdx;
+      if (amountIdx >= 0) document.getElementById('colAmount').value = amountIdx;
+      if (descIdx   >= 0) document.getElementById('colDesc').value   = descIdx;
+
+      // Preview
+      const preview = [csvHeaders, ...csvRows.slice(0, 3)]
+        .map(r => r.join(' | ')).join('\n');
+      document.getElementById('csvPreview').textContent = preview;
+      document.getElementById('columnMapper').classList.remove('hidden');
+    }
+
+    // ─── Load POS Data ─────────────────────────────────────
+    async function loadPOSData() {
+      const month  = document.getElementById('selectedMonth').value;
+      const branch = document.getElementById('selectedBranch').value;
+      if (!month) { showAlert('กรุณาเลือกเดือนก่อน', 'error'); return; }
+
+      showLoading(true);
+      try {
+        const res = await apiGet('getPOS', { month });
+        if (!res.success) throw new Error(res.error);
+
+        posData = branch ? res.data.filter(r => r.branch === branch) : res.data;
+
+        const status = document.getElementById('posStatus');
+        status.className = 'text-sm text-center py-2 rounded-lg bg-green-50 text-green-700';
+        status.textContent = `✅ โหลดข้อมูล POS ${posData.length} รายการ`;
+        status.classList.remove('hidden');
+        showAlert(`โหลด POS ${posData.length} รายการเรียบร้อย`, 'success');
+      } catch (err) {
+        showAlert('โหลด POS ไม่สำเร็จ: ' + err.message, 'error');
+      }
+      showLoading(false);
+    }
+
+    // ─── Reconciliation Engine ─────────────────────────────
+    function runReconciliation() {
+      if (!csvRows.length) { showAlert('กรุณา Upload Bank Statement ก่อน', 'error'); return; }
+      if (!posData.length) { showAlert('กรุณาโหลดข้อมูล POS ก่อน', 'error'); return; }
+
+      const colDate   = parseInt(document.getElementById('colDate').value);
+      const colAmount = parseInt(document.getElementById('colAmount').value);
+      const colDesc   = parseInt(document.getElementById('colDesc').value);
+      const tolerance = parseFloat(document.getElementById('tolerance').value) || 1;
+
+      // Parse bank rows
+      bankData = csvRows
+        .map(row => ({
+          date:   normalizeDate(row[colDate] || ''),
+          amount: parseAmount(row[colAmount] || '0'),
+          desc:   colDesc >= 0 ? (row[colDesc] || '') : ''
+        }))
+        .filter(r => r.date && r.amount !== 0);
+
+      // Clone POS for matching (we'll remove matched ones)
+      const posPool = posData.map((r, i) => ({ ...r, _idx: i, _matched: false }));
+      const matched = [], bankOnly = [];
+
+      for (const bank of bankData) {
+        // Find best match: same date + amount within tolerance
+        let bestIdx = -1;
+        let bestDiff = Infinity;
+
+        for (let i = 0; i < posPool.length; i++) {
+          if (posPool[i]._matched) continue;
+          if (posPool[i].date !== bank.date) continue;
+          const diff = Math.abs(posPool[i].amount - Math.abs(bank.amount));
+          if (diff <= tolerance && diff < bestDiff) {
+            bestDiff = diff;
+            bestIdx  = i;
+          }
+        }
+
+        if (bestIdx >= 0) {
+          posPool[bestIdx]._matched = true;
+          matched.push({ bank, pos: posPool[bestIdx] });
+        } else {
+          bankOnly.push(bank);
+        }
+      }
+
+      const posOnly = posPool.filter(r => !r._matched);
+      results = { matched, bankOnly, posOnly };
+      renderResults();
+    }
+
+    function normalizeDate(str) {
+      if (!str) return '';
+      // Handle dd/mm/yyyy, dd-mm-yyyy, yyyy-mm-dd
+      const cleaned = str.trim().replace(/[^0-9/\-\.]/g, '');
+      let d;
+      if (/^\d{4}-\d{2}-\d{2}/.test(cleaned)) {
+        d = new Date(cleaned);
+      } else if (/^\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{4}/.test(cleaned)) {
+        const parts = cleaned.split(/[\/\-\.]/);
+        d = new Date(`${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`);
+      } else {
+        d = new Date(cleaned);
+      }
+      if (isNaN(d)) return str;
+      return d.toISOString().slice(0, 10);
+    }
+
+    function parseAmount(str) {
+      // Remove commas, currency symbols, whitespace
+      const clean = String(str).replace(/[,\s฿$]/g, '').trim();
+      return parseFloat(clean) || 0;
+    }
+
+    // ─── Render Results ────────────────────────────────────
+    function renderResults() {
+      const { matched, bankOnly, posOnly } = results;
+
+      document.getElementById('sumMatched').textContent  = matched.length;
+      document.getElementById('sumBankOnly').textContent = bankOnly.length;
+      document.getElementById('sumPOSOnly').textContent  = posOnly.length;
+      document.getElementById('cnt-matched').textContent  = matched.length;
+      document.getElementById('cnt-bankonly').textContent = bankOnly.length;
+      document.getElementById('cnt-posonly').textContent  = posOnly.length;
+
+      const bankTotal = bankData.reduce((s, r) => s + Math.abs(r.amount), 0);
+      const posTotal  = posData.reduce((s, r)  => s + Math.abs(r.amount), 0);
+      document.getElementById('sumDiff').textContent =
+        (bankTotal - posTotal).toLocaleString('th-TH', { minimumFractionDigits: 2 });
+
+      // Matched table
+      document.getElementById('tbody-matched').innerHTML = matched.map(r =>
+        `<tr class="border-b border-gray-50 hover:bg-gray-50">
+          <td class="py-2 pr-4 text-gray-600">${r.bank.date}</td>
+          <td class="py-2 pr-4 text-right font-medium text-green-700">${fmtMoney(Math.abs(r.bank.amount))}</td>
+          <td class="py-2 pr-4 text-gray-500 text-xs max-w-xs truncate">${r.bank.desc}</td>
+          <td class="py-2 pr-4 text-gray-600">${r.pos.date}</td>
+          <td class="py-2 pr-4 text-right font-medium">${fmtMoney(r.pos.amount)}</td>
+          <td class="py-2 text-xs text-gray-500">${r.pos.branch || ''}</td>
+        </tr>`
+      ).join('') || '<tr><td colspan="6" class="py-6 text-center text-gray-400">ไม่มีรายการที่ตรงกัน</td></tr>';
+
+      // Bank only table
+      document.getElementById('tbody-bankonly').innerHTML = bankOnly.map(r =>
+        `<tr class="border-b border-gray-50 hover:bg-yellow-50">
+          <td class="py-2 pr-4 text-gray-600">${r.date}</td>
+          <td class="py-2 pr-4 text-right font-medium text-yellow-700">${fmtMoney(Math.abs(r.amount))}</td>
+          <td class="py-2 text-gray-500 text-xs">${r.desc}</td>
+        </tr>`
+      ).join('') || '<tr><td colspan="3" class="py-6 text-center text-gray-400">ไม่มีรายการ</td></tr>';
+
+      // POS only table
+      document.getElementById('tbody-posonly').innerHTML = posOnly.map(r =>
+        `<tr class="border-b border-gray-50 hover:bg-red-50">
+          <td class="py-2 pr-4 text-gray-600">${r.date}</td>
+          <td class="py-2 pr-4 text-right font-medium text-red-700">${fmtMoney(r.amount)}</td>
+          <td class="py-2 pr-4 text-gray-500 text-xs">${r.description || ''}</td>
+          <td class="py-2 pr-4 text-gray-400 text-xs">${r.ref_no || ''}</td>
+          <td class="py-2 text-xs text-gray-500">${r.branch || ''}</td>
+        </tr>`
+      ).join('') || '<tr><td colspan="5" class="py-6 text-center text-gray-400">ไม่มีรายการ</td></tr>';
+
+      document.getElementById('resultsSection').classList.remove('hidden');
+      showAlert(`กระทบยอดเสร็จแล้ว: Match ${matched.length} | ธนาคารเท่านั้น ${bankOnly.length} | POS เท่านั้น ${posOnly.length}`, 'success');
+    }
+
+    // ─── Tab Switch ────────────────────────────────────────
+    function showTab(name) {
+      ['matched','bankonly','posonly'].forEach(t => {
+        document.getElementById('pane-' + t).classList.toggle('hidden', t !== name);
+        document.getElementById('tab-' + t).classList.toggle('active', t === name);
+        if (t !== name) document.getElementById('tab-' + t).classList.add('text-gray-500');
+        else document.getElementById('tab-' + t).classList.remove('text-gray-500');
+      });
+    }
+
+    // ─── Export CSV ────────────────────────────────────────
+    function exportCSV() {
+      const { matched, bankOnly, posOnly } = results;
+      const month = document.getElementById('selectedMonth').value;
+      let csv = '﻿'; // BOM for Excel Thai
+      csv += 'ประเภท,วันที่ธนาคาร,จำนวนธนาคาร,รายละเอียด,วันที่POS,จำนวนPOS,สาขา\n';
+      matched.forEach(r => {
+        csv += `Matched,${r.bank.date},${r.bank.amount},"${r.bank.desc}",${r.pos.date},${r.pos.amount},${r.pos.branch||''}\n`;
+      });
+      bankOnly.forEach(r => {
+        csv += `ธนาคารเท่านั้น,${r.date},${r.amount},"${r.desc}",,,\n`;
+      });
+      posOnly.forEach(r => {
+        csv += `POSเท่านั้น,,,"",${r.date},${r.amount},${r.branch||''}\n`;
+      });
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a    = document.createElement('a');
+      a.href     = URL.createObjectURL(blob);
+      a.download = `reconcile_${month}.csv`;
+      a.click();
+    }
+
+    // ─── Save Log to Google Sheets ─────────────────────────
+    async function saveLog() {
+      const month = document.getElementById('selectedMonth').value;
+      const bankTotal = bankData.reduce((s, r) => s + Math.abs(r.amount), 0);
+      const posTotal  = posData.reduce((s, r)  => s + Math.abs(r.amount), 0);
+      showLoading(true);
+      try {
+        const res = await apiPost('addReconcileLog', {
+          month,
+          matched:       results.matched.length,
+          unmatched_bank: results.bankOnly.length,
+          unmatched_pos:  results.posOnly.length,
+          total_bank:     bankTotal,
+          total_pos:      posTotal
+        });
+        if (!res.success) throw new Error(res.error);
+        showAlert('บันทึก Log เรียบร้อยแล้ว', 'success');
+      } catch (err) {
+        showAlert('บันทึกไม่สำเร็จ: ' + err.message, 'error');
+      }
+      showLoading(false);
+    }
+  </script>
+</body>
+</html>

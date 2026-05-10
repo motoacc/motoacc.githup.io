@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ปฏิทินภาษี — Moto Addict Finance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Sarabun', sans-serif; }
+    @media print { .no-print { display:none!important; } }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <div id="alert" class="hidden fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg text-white font-medium"></div>
+  <div id="loading" class="hidden fixed inset-0 z-40 bg-black bg-opacity-30 flex items-center justify-center">
+    <div class="bg-white rounded-2xl p-6 text-center shadow-xl">
+      <div class="w-10 h-10 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+      <p class="text-gray-700 font-medium">กำลังโหลด...</p>
+    </div>
+  </div>
+
+  <!-- Modal: Update Tax -->
+  <div id="modal" class="hidden fixed inset-0 z-50 bg-black bg-opacity-40 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+      <h3 class="text-base font-bold text-gray-800 mb-4">อัปเดตสถานะภาษี</h3>
+      <input type="hidden" id="m-month">
+      <input type="hidden" id="m-type">
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs text-gray-500 block mb-1">ยอดภาษี (บาท)</label>
+          <input type="number" id="m-amount" step="0.01" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-400">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500 block mb-1">วันที่ยื่น</label>
+          <input type="date" id="m-filed" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-400">
+        </div>
+        <div>
+          <label class="text-xs text-gray-500 block mb-1">สถานะ</label>
+          <select id="m-status" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-400">
+            <option value="ยังไม่ยื่น">ยังไม่ยื่น</option>
+            <option value="ยื่นแล้ว">ยื่นแล้ว</option>
+            <option value="เลยกำหนด">เลยกำหนด</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-gray-500 block mb-1">หมายเหตุ</label>
+          <input type="text" id="m-notes" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-yellow-400">
+        </div>
+      </div>
+      <div class="flex gap-3 mt-5">
+        <button onclick="closeModal()" class="flex-1 border border-gray-200 text-gray-600 py-2 rounded-xl text-sm hover:bg-gray-50">ยกเลิก</button>
+        <button onclick="saveStatus()" class="flex-1 bg-yellow-500 text-white py-2 rounded-xl text-sm font-semibold hover:bg-yellow-600">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="bg-white shadow-sm border-b border-gray-200 no-print">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
+      <a href="index.html" class="text-gray-400 hover:text-gray-600">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </a>
+      <div class="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold text-gray-900">ปฏิทินภาษีและการควบคุม</h1>
+        <p class="text-xs text-gray-500">ติดตาม Deadline ภ.พ.30, ภ.ง.ด.1/3/53 — สถานะและยอดภาษีแต่ละเดือน</p>
+      </div>
+      <div class="ml-auto flex gap-2 no-print">
+        <input type="month" id="selectedMonth" class="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-yellow-400">
+        <button onclick="loadData()" class="bg-yellow-500 text-white px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-yellow-600">โหลด</button>
+        <button onclick="generateTemplate()" class="border border-yellow-400 text-yellow-700 px-4 py-1.5 rounded-lg text-sm font-semibold hover:bg-yellow-50">สร้างรายการเดือนนี้</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-6">
+
+    <!-- Deadline Alert Banner -->
+    <div id="alertBanner" class="hidden mb-5"></div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-green-50 border border-green-200 rounded-2xl p-4 text-center">
+        <p class="text-2xl font-bold text-green-700" id="cnt-filed">—</p>
+        <p class="text-xs text-green-600 mt-1">ยื่นแล้ว</p>
+      </div>
+      <div class="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 text-center">
+        <p class="text-2xl font-bold text-yellow-700" id="cnt-pending">—</p>
+        <p class="text-xs text-yellow-600 mt-1">ยังไม่ยื่น</p>
+      </div>
+      <div class="bg-red-50 border border-red-200 rounded-2xl p-4 text-center">
+        <p class="text-2xl font-bold text-red-700" id="cnt-overdue">—</p>
+        <p class="text-xs text-red-600 mt-1">เลยกำหนด</p>
+      </div>
+      <div class="bg-purple-50 border border-purple-200 rounded-2xl p-4 text-center">
+        <p class="text-xl font-bold text-purple-700" id="total-tax">—</p>
+        <p class="text-xs text-purple-600 mt-1">ยอดภาษีรวม (บาท)</p>
+      </div>
+    </div>
+
+    <!-- Tax Table -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+      <div class="p-5 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="text-sm font-semibold text-gray-700">รายการภาษีประจำเดือน</h3>
+        <span id="monthLabel" class="text-xs text-gray-400"></span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left text-xs text-gray-400 border-b border-gray-100">
+              <th class="px-5 pb-3 pt-1">แบบภาษี</th>
+              <th class="px-5 pb-3 pt-1">รายละเอียด</th>
+              <th class="px-5 pb-3 pt-1 text-right">ยอดภาษี (บาท)</th>
+              <th class="px-5 pb-3 pt-1">Deadline</th>
+              <th class="px-5 pb-3 pt-1">วันที่ยื่น</th>
+              <th class="px-5 pb-3 pt-1">สถานะ</th>
+              <th class="px-5 pb-3 pt-1 no-print">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="taxTable">
+            <tr><td colspan="7" class="py-10 text-center text-gray-400">กด "โหลด" หรือ "สร้างรายการเดือนนี้" เพื่อเริ่ม</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tax Reference Card -->
+    <div class="mt-6 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+      <h3 class="text-sm font-semibold text-gray-700 mb-4">ตาราง Deadline ภาษีอ้างอิง</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-600">
+        <div class="space-y-2">
+          <div class="flex justify-between bg-gray-50 rounded-lg px-3 py-2">
+            <span class="font-semibold">ภ.พ.30</span>
+            <span>ยื่นออนไลน์: วันที่ 23 ของเดือนถัดไป</span>
+          </div>
+          <div class="flex justify-between bg-gray-50 rounded-lg px-3 py-2">
+            <span class="font-semibold">ภ.ง.ด.1</span>
+            <span>วันที่ 7 (กระดาษ) / 15 (ออนไลน์)</span>
+          </div>
+        </div>
+        <div class="space-y-2">
+          <div class="flex justify-between bg-gray-50 rounded-lg px-3 py-2">
+            <span class="font-semibold">ภ.ง.ด.3</span>
+            <span>วันที่ 7 (กระดาษ) / 15 (ออนไลน์)</span>
+          </div>
+          <div class="flex justify-between bg-gray-50 rounded-lg px-3 py-2">
+            <span class="font-semibold">ภ.ง.ด.53</span>
+            <span>วันที่ 7 (กระดาษ) / 15 (ออนไลน์)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="config.js"></script>
+  <script>
+    const TAX_TYPES = [
+      { type: 'ภ.พ.30',   desc: 'ภาษีมูลค่าเพิ่ม (VAT)',              deadlineDay: 23 },
+      { type: 'ภ.ง.ด.1',  desc: 'ภาษีเงินได้พนักงาน (เงินเดือน)',      deadlineDay: 15 },
+      { type: 'ภ.ง.ด.3',  desc: 'ภาษีหัก ณ ที่จ่าย บุคคลธรรมดา',      deadlineDay: 15 },
+      { type: 'ภ.ง.ด.53', desc: 'ภาษีหัก ณ ที่จ่าย นิติบุคคล',         deadlineDay: 15 }
+    ];
+
+    let currentData = [];
+
+    document.getElementById('selectedMonth').value = currentMonth();
+
+    async function loadData() {
+      const month = document.getElementById('selectedMonth').value;
+      if (!month) { showAlert('กรุณาเลือกเดือน', 'error'); return; }
+
+      showLoading(true);
+      try {
+        const res = await apiGet('getTaxStatus', { month });
+        if (!res.success) throw new Error(res.error);
+        currentData = res.data;
+        renderTable(currentData, month);
+      } catch (err) {
+        showAlert('โหลดไม่สำเร็จ: ' + err.message, 'error');
+      }
+      showLoading(false);
+    }
+
+    function generateTemplate() {
+      const month = document.getElementById('selectedMonth').value;
+      if (!month) { showAlert('กรุณาเลือกเดือน', 'error'); return; }
+
+      // Deadline is in NEXT month
+      const [y, m] = month.split('-').map(Number);
+      const nextMonth = m === 12 ? `${y+1}-01` : `${y}-${String(m+1).padStart(2,'0')}`;
+
+      const template = TAX_TYPES.map(t => {
+        const dl = `${nextMonth}-${String(t.deadlineDay).padStart(2,'0')}`;
+        return { month, tax_type: t.type, amount: 0, deadline: dl, filed_date: '', status: 'ยังไม่ยื่น', notes: '' };
+      });
+
+      currentData = template;
+      renderTable(template, month);
+      showAlert('สร้างรายการเดือนนี้แล้ว — กรุณาอัปเดตยอดภาษีและบันทึก', 'info');
+    }
+
+    function renderTable(data, month) {
+      const [y, m] = month.split('-').map(Number);
+      document.getElementById('monthLabel').textContent =
+        new Date(y, m - 1, 1).toLocaleDateString('th-TH', { year: 'numeric', month: 'long' });
+
+      const today = todayISO();
+      let filed = 0, pending = 0, overdue = 0, totalTax = 0;
+      const alertItems = [];
+
+      document.getElementById('taxTable').innerHTML = data.map(r => {
+        const tax = Number(r.amount) || 0;
+        totalTax += tax;
+
+        let statusClass, statusText;
+        if (r.status === 'ยื่นแล้ว') {
+          statusClass = 'bg-green-100 text-green-700'; statusText = '✅ ยื่นแล้ว'; filed++;
+        } else if (r.status === 'เลยกำหนด' || (r.deadline && r.deadline < today && r.status !== 'ยื่นแล้ว')) {
+          statusClass = 'bg-red-100 text-red-700'; statusText = '❌ เลยกำหนด'; overdue++;
+          r.status = 'เลยกำหนด';
+        } else {
+          // Check if deadline is within 7 days
+          const daysLeft = r.deadline ? Math.ceil((new Date(r.deadline) - new Date(today)) / 86400000) : 999;
+          if (daysLeft <= 7 && daysLeft >= 0) {
+            statusClass = 'bg-orange-100 text-orange-700';
+            statusText  = `⚠️ ${daysLeft} วัน`;
+            alertItems.push(`${r.tax_type} — เหลือ ${daysLeft} วัน (${fmtDate(r.deadline)})`);
+          } else {
+            statusClass = 'bg-yellow-100 text-yellow-700';
+            statusText  = '🕐 ยังไม่ยื่น';
+          }
+          pending++;
+        }
+
+        const taxInfo = TAX_TYPES.find(t => t.type === r.tax_type);
+        const desc = taxInfo ? taxInfo.desc : '';
+
+        return `<tr class="border-b border-gray-50 hover:bg-gray-50">
+          <td class="px-5 py-3 font-semibold text-gray-800">${r.tax_type}</td>
+          <td class="px-5 py-3 text-gray-500 text-xs">${desc}</td>
+          <td class="px-5 py-3 text-right font-semibold ${tax > 0 ? 'text-gray-900' : 'text-gray-300'}">${tax > 0 ? fmtMoney(tax) : '—'}</td>
+          <td class="px-5 py-3 text-sm ${r.deadline && r.deadline < today && r.status !== 'ยื่นแล้ว' ? 'text-red-600 font-semibold' : 'text-gray-600'}">${fmtDate(r.deadline)}</td>
+          <td class="px-5 py-3 text-sm text-gray-500">${r.filed_date ? fmtDate(r.filed_date) : '—'}</td>
+          <td class="px-5 py-3"><span class="px-2.5 py-1 rounded-full text-xs font-medium ${statusClass}">${statusText}</span></td>
+          <td class="px-5 py-3 no-print">
+            <button onclick='openModal(${JSON.stringify(r)})' class="text-xs text-blue-600 hover:text-blue-800 font-medium">แก้ไข</button>
+          </td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="7" class="py-8 text-center text-gray-400">ไม่มีข้อมูล</td></tr>';
+
+      document.getElementById('cnt-filed').textContent   = filed;
+      document.getElementById('cnt-pending').textContent = pending;
+      document.getElementById('cnt-overdue').textContent = overdue;
+      document.getElementById('total-tax').textContent   = fmtMoney(totalTax);
+
+      // Alert banner
+      const banner = document.getElementById('alertBanner');
+      if (alertItems.length) {
+        banner.className = 'mb-5 bg-orange-50 border border-orange-200 rounded-2xl p-4';
+        banner.innerHTML = `<p class="text-sm font-semibold text-orange-800 mb-2">⚠️ ภาษีที่ใกล้ครบกำหนด</p>
+          ${alertItems.map(a => `<p class="text-xs text-orange-700 mt-1">• ${a}</p>`).join('')}`;
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    function openModal(r) {
+      document.getElementById('m-month').value  = r.month;
+      document.getElementById('m-type').value   = r.tax_type;
+      document.getElementById('m-amount').value = r.amount || '';
+      document.getElementById('m-filed').value  = fmtDateInput(r.filed_date);
+      document.getElementById('m-status').value = r.status || 'ยังไม่ยื่น';
+      document.getElementById('m-notes').value  = r.notes || '';
+      document.getElementById('modal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.add('hidden');
+    }
+
+    async function saveStatus() {
+      const month    = document.getElementById('m-month').value;
+      const tax_type = document.getElementById('m-type').value;
+      const amount   = document.getElementById('m-amount').value;
+      const filed    = document.getElementById('m-filed').value;
+      const status   = document.getElementById('m-status').value;
+      const notes    = document.getElementById('m-notes').value;
+
+      // Calculate deadline from TAX_TYPES
+      const [y, m] = month.split('-').map(Number);
+      const nextM  = m === 12 ? `${y+1}-01` : `${y}-${String(m+1).padStart(2,'0')}`;
+      const info   = TAX_TYPES.find(t => t.type === tax_type);
+      const deadline = info ? `${nextM}-${String(info.deadlineDay).padStart(2,'0')}` : '';
+
+      showLoading(true);
+      closeModal();
+      try {
+        const res = await apiPost('updateTaxStatus', { month, tax_type, amount, deadline, filed_date: filed, status, notes });
+        if (!res.success) throw new Error(res.error);
+        showAlert('บันทึกเรียบร้อย', 'success');
+        await loadData();
+      } catch (err) {
+        showAlert('บันทึกไม่สำเร็จ: ' + err.message, 'error');
+      }
+      showLoading(false);
+    }
+  </script>
+</body>
+</html>

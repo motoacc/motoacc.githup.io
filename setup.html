@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ตั้งค่าการเชื่อมต่อ Google Sheets — Moto Addict Finance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Sarabun', sans-serif; }
+    .step-done  { background: #dcfce7; border-color: #16a34a; }
+    .step-active{ background: #eff6ff; border-color: #2563eb; }
+    .step-todo  { background: #f9fafb; border-color: #e5e7eb; }
+    pre { white-space: pre-wrap; font-family: 'Courier New', monospace; font-size: 11px; }
+    .copy-btn:active { transform: scale(0.95); }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <div id="alert" class="hidden fixed top-4 right-4 z-50 px-5 py-3 rounded-lg shadow-lg text-white font-medium text-sm max-w-xs"></div>
+
+  <!-- Header -->
+  <header class="bg-white shadow-sm border-b border-gray-200">
+    <div class="max-w-3xl mx-auto px-4 py-4 flex items-center gap-3">
+      <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold text-gray-900">ตั้งค่าการเชื่อมต่อ Google Sheets</h1>
+        <p class="text-xs text-gray-500">ทำครั้งเดียว — บันทึกในเบราว์เซอร์อัตโนมัติ</p>
+      </div>
+      <div class="ml-auto flex items-center gap-3">
+        <button onclick="quickSetup()"
+          class="text-xs bg-blue-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-blue-700">
+          เครื่องใหม่? ตั้งค่าเร็ว →
+        </button>
+        <a href="index.html" class="text-sm text-gray-400 hover:text-gray-600">หน้าหลัก</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Progress bar -->
+  <div class="bg-white border-b border-gray-100">
+    <div class="max-w-3xl mx-auto px-4 py-3">
+      <div class="flex items-center gap-1">
+        <div class="step-pill flex-1 h-2 rounded-full bg-gray-200" id="pill1"></div>
+        <div class="step-pill flex-1 h-2 rounded-full bg-gray-200" id="pill2"></div>
+        <div class="step-pill flex-1 h-2 rounded-full bg-gray-200" id="pill3"></div>
+        <div class="step-pill flex-1 h-2 rounded-full bg-gray-200" id="pill4"></div>
+      </div>
+      <p class="text-xs text-gray-400 mt-1 text-center" id="progressLabel">ขั้นตอนที่ 1 จาก 4</p>
+    </div>
+  </div>
+
+  <main class="max-w-3xl mx-auto px-4 py-8">
+
+    <!-- ═══════════════════════════════════════════
+         STEP 1: Create Google Sheets
+    ═══════════════════════════════════════════ -->
+    <div id="step1" class="step-active border-2 rounded-2xl p-6 mb-4">
+      <div class="flex items-start gap-4">
+        <div class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center shrink-0">
+          <span class="text-blue-700 font-bold text-lg">1</span>
+        </div>
+        <div class="flex-1">
+          <h2 class="text-lg font-bold text-gray-900 mb-1">สร้าง Google Sheets</h2>
+          <p class="text-sm text-gray-500 mb-4">สร้าง Spreadsheet ใหม่ที่จะใช้เป็นฐานข้อมูล</p>
+
+          <!-- Open Sheets button -->
+          <a href="https://sheets.google.com/create" target="_blank"
+            class="inline-flex items-center gap-2 bg-green-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-green-600 mb-4">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.77 7.23l.01-.01-3.72-3.72L15 4.5l2.77 2.77.01.01L15 10v3l5-5-5-5v3z"/>
+            </svg>
+            เปิด Google Sheets → สร้างใหม่
+          </a>
+
+          <div class="bg-blue-50 rounded-xl p-4 text-sm text-blue-800 space-y-2">
+            <p class="font-semibold">📋 วิธีทำ:</p>
+            <ol class="list-decimal pl-4 space-y-1.5 text-blue-700">
+              <li>คลิกปุ่มด้านบน → สร้าง Spreadsheet ใหม่</li>
+              <li>ตั้งชื่อ: <strong>"Moto Addict Finance DB"</strong></li>
+              <li>คัดลอก <strong>Spreadsheet ID</strong> จาก URL:<br>
+                <code class="bg-blue-100 px-1.5 py-0.5 rounded text-xs">
+                  docs.google.com/spreadsheets/d/<span class="font-bold text-blue-900 underline">xxxxxxxx</span>/edit
+                </code>
+              </li>
+              <li>วาง ID ลงในช่องด้านล่าง</li>
+            </ol>
+          </div>
+
+          <div class="mt-4">
+            <label class="text-sm font-semibold text-gray-700 block mb-2">
+              Spreadsheet ID
+              <span class="text-xs text-gray-400 font-normal ml-1">(ส่วนที่อยู่ระหว่าง /d/ และ /edit)</span>
+            </label>
+            <div class="flex gap-2">
+              <input type="text" id="sheetId"
+                placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
+                class="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-400 font-mono">
+              <button onclick="validateSheetId()"
+                class="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 whitespace-nowrap">
+                ยืนยัน →
+              </button>
+            </div>
+            <p class="text-xs text-gray-400 mt-1">ตัวอย่าง: <code>1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms</code></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         STEP 2: Apps Script Setup
+    ═══════════════════════════════════════════ -->
+    <div id="step2" class="step-todo border-2 rounded-2xl p-6 mb-4 opacity-50 pointer-events-none">
+      <div class="flex items-start gap-4">
+        <div class="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
+          <span class="text-gray-500 font-bold text-lg">2</span>
+        </div>
+        <div class="flex-1">
+          <h2 class="text-lg font-bold text-gray-900 mb-1">ติดตั้ง Apps Script</h2>
+          <p class="text-sm text-gray-500 mb-4">เพิ่ม Backend API ใน Google Sheets (ทำครั้งเดียว)</p>
+
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 text-sm text-amber-800">
+            <p class="font-semibold mb-1">🔧 ขั้นตอน:</p>
+            <ol class="list-decimal pl-4 space-y-1.5">
+              <li>ใน Google Sheets → เมนู <strong>Extensions → Apps Script</strong></li>
+              <li>ลบโค้ดเดิมทั้งหมดออก</li>
+              <li>คัดลอกโค้ดด้านล่าง → วางแทน → กด <strong>Save (Ctrl+S)</strong></li>
+              <li>เลือกฟังก์ชัน <strong>initSheets</strong> → กด <strong>▶ Run</strong> (สร้าง Sheet ทั้งหมดอัตโนมัติ)</li>
+              <li>คลิก <strong>Deploy → New deployment → Web app</strong></li>
+              <li>ตั้งค่า: Execute as = <strong>Me</strong> | Who can access = <strong>Anyone</strong></li>
+              <li>คัดลอก <strong>Web App URL</strong> ที่ได้</li>
+            </ol>
+          </div>
+
+          <!-- Code block -->
+          <div class="relative">
+            <div class="bg-gray-900 rounded-xl overflow-hidden">
+              <div class="flex items-center justify-between px-4 py-2 bg-gray-800">
+                <span class="text-gray-400 text-xs font-mono">Code.gs — คัดลอกทั้งหมดไปวางใน Apps Script</span>
+                <button onclick="copyCode()" class="copy-btn bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs px-3 py-1 rounded-lg transition-colors">
+                  📋 คัดลอก
+                </button>
+              </div>
+              <div class="p-4 overflow-x-auto max-h-56 overflow-y-auto">
+                <pre id="codeBlock" class="text-green-400"></pre>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         STEP 3: Enter API URL & Test
+    ═══════════════════════════════════════════ -->
+    <div id="step3" class="step-todo border-2 rounded-2xl p-6 mb-4 opacity-50 pointer-events-none">
+      <div class="flex items-start gap-4">
+        <div class="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
+          <span class="text-gray-500 font-bold text-lg">3</span>
+        </div>
+        <div class="flex-1">
+          <h2 class="text-lg font-bold text-gray-900 mb-1">ใส่ Web App URL และทดสอบ</h2>
+          <p class="text-sm text-gray-500 mb-4">วาง URL จากการ Deploy ในขั้นตอนที่ 2</p>
+
+          <div class="space-y-4">
+            <div>
+              <label class="text-sm font-semibold text-gray-700 block mb-1.5">Web App URL</label>
+              <input type="url" id="apiUrl"
+                placeholder="https://script.google.com/macros/s/AKfycbx.../exec"
+                class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-400 font-mono">
+            </div>
+            <div>
+              <label class="text-sm font-semibold text-gray-700 block mb-1.5">
+                Secret Token
+                <span class="text-xs text-gray-400 font-normal ml-1">(ตั้งรหัสอะไรก็ได้ ต้องตรงกับใน Code.gs)</span>
+              </label>
+              <div class="flex gap-2">
+                <input type="text" id="apiToken" value="MOTO_ADDICT_2024"
+                  class="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-400">
+                <button onclick="generateToken()"
+                  class="border border-gray-200 text-gray-600 px-3 py-2.5 rounded-xl text-sm hover:bg-gray-50 whitespace-nowrap">
+                  สร้างรหัส
+                </button>
+              </div>
+              <p class="text-xs text-amber-600 mt-1">
+                ⚠️ คัดลอก token นี้ไปใส่ใน Code.gs บรรทัด <code>const SECRET_TOKEN = '...'</code> ด้วย
+              </p>
+            </div>
+
+            <!-- Token reminder -->
+            <div id="tokenReminder" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-3">
+              <p class="text-xs text-amber-800 font-semibold mb-1">📌 อย่าลืมอัปเดต Code.gs ด้วย!</p>
+              <p class="text-xs text-amber-700">เปิด Apps Script → แก้บรรทัดนี้:</p>
+              <code class="text-xs bg-amber-100 block mt-1 p-2 rounded font-mono" id="tokenCodeLine"></code>
+              <p class="text-xs text-amber-700 mt-1">แล้ว Deploy ใหม่ → New deployment</p>
+            </div>
+
+            <button onclick="testConnection()"
+              class="w-full bg-blue-600 text-white py-3 rounded-xl text-sm font-bold hover:bg-blue-700">
+              🔌 ทดสอบการเชื่อมต่อ
+            </button>
+
+            <div id="testResult" class="hidden rounded-xl p-4 text-sm"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════
+         STEP 4: Done
+    ═══════════════════════════════════════════ -->
+    <div id="step4" class="step-todo border-2 rounded-2xl p-6 opacity-50 pointer-events-none">
+      <div class="flex items-start gap-4">
+        <div class="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center shrink-0">
+          <span class="text-gray-500 font-bold text-lg">4</span>
+        </div>
+        <div class="flex-1">
+          <h2 class="text-lg font-bold text-gray-900 mb-1">เชื่อมต่อสำเร็จ! 🎉</h2>
+          <p class="text-sm text-gray-500 mb-4">ระบบพร้อมใช้งานแล้ว</p>
+
+          <div id="successInfo" class="bg-green-50 border border-green-200 rounded-xl p-5 mb-5">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <div>
+                <p class="font-bold text-green-800">เชื่อมต่อ Google Sheets สำเร็จ</p>
+                <p class="text-xs text-green-600" id="successDetail"></p>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <div class="bg-white rounded-lg p-3 border border-green-200">
+                <p class="text-gray-500 mb-0.5">Sheets ที่สร้างแล้ว</p>
+                <p class="font-semibold text-gray-800" id="sheetsList">—</p>
+              </div>
+              <div class="bg-white rounded-lg p-3 border border-green-200">
+                <p class="text-gray-500 mb-0.5">Chart of Accounts</p>
+                <p class="font-semibold text-gray-800">24 รายการ (มาตรฐาน)</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <a href="import.html"
+              class="bg-indigo-600 text-white py-3 rounded-xl text-center text-sm font-bold hover:bg-indigo-700">
+              📥 นำเข้า Excel ค่าใช้จ่าย
+            </a>
+            <a href="index.html"
+              class="bg-gray-800 text-white py-3 rounded-xl text-center text-sm font-bold hover:bg-gray-900">
+              🏠 ไปหน้าหลัก
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+  // ─── Code.gs content for copy ──────────────────────────────────────────────
+  // (Inject the actual code from the Code.gs file)
+  const GAS_CODE = `// Moto Addict Finance — Google Apps Script
+// วาง Spreadsheet ID และ Token ที่ต้องการด้านล่างนี้
+
+const SPREADSHEET_ID = '{{SHEET_ID}}'; // ← ใส่ ID จากขั้นตอน 1
+const SECRET_TOKEN   = '{{TOKEN}}';    // ← ต้องตรงกับในแอป
+
+function doGet(e)  { return handleRequest(e.parameter, null); }
+function doPost(e) {
+  let body = {};
+  try { body = JSON.parse(e.postData.contents); } catch(_) {}
+  return handleRequest(e.parameter, body);
+}
+
+function handleRequest(params, body) {
+  const token = params.token || (body && body.token);
+  if (token !== SECRET_TOKEN) return jsonResponse({success:false,error:'Unauthorized'});
+  const action = params.action || (body && body.action);
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  try {
+    switch(action) {
+      case 'getPOS':             return jsonResponse(getPOS(ss, params.month));
+      case 'getJournal':         return jsonResponse(getJournal(ss, params.month));
+      case 'getVehicles':        return jsonResponse(getVehicles(ss));
+      case 'getTaxStatus':       return jsonResponse(getTaxStatus(ss, params.month));
+      case 'getChartOfAccounts': return jsonResponse(getChartOfAccounts(ss));
+      case 'getSummary':         return jsonResponse(getSummary(ss, params.month));
+      case 'addVoucher':         return jsonResponse(addVoucher(ss, body));
+      case 'addBulkVouchers':    return jsonResponse(addBulkVouchers(ss, body));
+      case 'addReconcileLog':    return jsonResponse(addReconcileLog(ss, body));
+      case 'addPOS':             return jsonResponse(addPOS(ss, body));
+      case 'updateVehicle':      return jsonResponse(updateVehicle(ss, body));
+      case 'updateTaxStatus':    return jsonResponse(updateTaxStatus(ss, body));
+      case 'initSheets':         return jsonResponse(initSheets(ss));
+      default: return jsonResponse({success:false,error:'Unknown: '+action});
+    }
+  } catch(err) { return jsonResponse({success:false,error:err.toString()}); }
+}
+
+function jsonResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+function fmtDate(v) {
+  if(!v) return '';
+  try { return Utilities.formatDate(new Date(v),'Asia/Bangkok','yyyy-MM-dd'); } catch(_){return '';}
+}
+function sheetRows(s){ const d=s.getDataRange().getValues(); return d.length>1?d.slice(1):[]; }
+
+function getPOS(ss,month){ return getSheetData(ss,'POS_DATA',month,r=>({date:fmtDate(r[0]),amount:r[1],description:r[2],branch:r[3],ref_no:r[4],type:r[5]})); }
+function getJournal(ss,month){ return getSheetData(ss,'JOURNAL_ENTRIES',month,r=>({date:fmtDate(r[0]),voucher_no:r[1],account_code:r[2],account_name:r[3],debit:r[4]||0,credit:r[5]||0,description:r[6],branch:r[7]})); }
+
+function getSheetData(ss,name,month,mapper){
+  const sh=ss.getSheetByName(name);
+  if(!sh) return {success:false,error:'Sheet '+name+' not found'};
+  const rows=sheetRows(sh).filter(r=>{
+    if(!r[0]) return false;
+    if(!month) return true;
+    return fmtDate(r[0]).startsWith(month);
+  });
+  return {success:true,data:rows.map(mapper)};
+}
+
+function getSummary(ss,month){
+  const j=getJournal(ss,month); if(!j.success) return j;
+  let dr=0,cr=0; const byAcc={};
+  j.data.forEach(r=>{ dr+=Number(r.debit)||0; cr+=Number(r.credit)||0;
+    if(r.account_code){ if(!byAcc[r.account_code]) byAcc[r.account_code]={code:r.account_code,name:r.account_name,debit:0,credit:0};
+      byAcc[r.account_code].debit+=Number(r.debit)||0; byAcc[r.account_code].credit+=Number(r.credit)||0; }
+  });
+  return {success:true,month,totalDebit:dr,totalCredit:cr,accounts:Object.values(byAcc)};
+}
+
+function getVehicles(ss){
+  const sh=ss.getSheetByName('VEHICLES'); if(!sh) return {success:false,error:'Not found'};
+  return {success:true,data:sheetRows(sh).filter(r=>r[0]).map((r,i)=>({row_index:i+2,reg_no:r[0],branch:r[1],type:r[2],expire_date:fmtDate(r[3]),owner:r[4],status:r[5],notes:r[6]}))};
+}
+
+function getTaxStatus(ss,month){
+  const sh=ss.getSheetByName('TAX_CALENDAR'); if(!sh) return {success:false,error:'Not found'};
+  return {success:true,data:sheetRows(sh).filter(r=>r[0]&&(!month||r[0]===month)).map(r=>({month:r[0],tax_type:r[1],amount:r[2],deadline:fmtDate(r[3]),filed_date:fmtDate(r[4]),status:r[5],notes:r[6]}))};
+}
+
+function getChartOfAccounts(ss){
+  const sh=ss.getSheetByName('CHART_OF_ACCOUNTS'); if(!sh) return {success:false,error:'Not found'};
+  return {success:true,data:sheetRows(sh).filter(r=>r[0]).map(r=>({code:r[0],name:r[1],type:r[2],normal_balance:r[3]}))};
+}
+
+function addVoucher(ss,body){
+  const vs=ss.getSheetByName('VOUCHERS'),js=ss.getSheetByName('JOURNAL_ENTRIES');
+  if(!vs||!js) return {success:false,error:'Sheets not found'};
+  const {voucher_no,date,payee,amount,category,description,branch,entries}=body;
+  vs.appendRow([new Date(date),voucher_no,payee,Number(amount),category,description,branch,'บันทึกแล้ว',new Date()]);
+  (entries||[]).forEach(e=>js.appendRow([new Date(date),voucher_no,e.account_code,e.account_name,Number(e.debit)||0,Number(e.credit)||0,description,branch]));
+  return {success:true,voucher_no};
+}
+
+function addBulkVouchers(ss,body){
+  const {vouchers}=body; if(!vouchers||!vouchers.length) return {success:false,error:'No data'};
+  const vs=ss.getSheetByName('VOUCHERS'),js=ss.getSheetByName('JOURNAL_ENTRIES');
+  if(!vs||!js) return {success:false,error:'Run initSheets first'};
+  let count=0;
+  for(const v of vouchers){
+    vs.appendRow([new Date(v.date),v.voucher_no,v.payee,Number(v.amount)||0,v.category,v.description,v.branch,'นำเข้า Excel',new Date()]);
+    (v.entries||[]).forEach(e=>js.appendRow([new Date(v.date),v.voucher_no,e.account_code,e.account_name,Number(e.debit)||0,Number(e.credit)||0,v.description,v.branch]));
+    count++;
+  }
+  return {success:true,imported:count};
+}
+
+function addReconcileLog(ss,body){
+  const sh=ss.getSheetByName('RECONCILE_LOG'); if(!sh) return {success:false,error:'Not found'};
+  const {month,matched,unmatched_bank,unmatched_pos,total_bank,total_pos}=body;
+  sh.appendRow([new Date(),month,matched,unmatched_bank,unmatched_pos,total_bank,total_pos]);
+  return {success:true};
+}
+
+function addPOS(ss,body){
+  const sh=ss.getSheetByName('POS_DATA'); if(!sh) return {success:false,error:'Not found'};
+  sh.appendRow([new Date(body.date),Number(body.amount),body.description,body.branch,body.ref_no,body.type]);
+  return {success:true};
+}
+
+function updateVehicle(ss,body){
+  const sh=ss.getSheetByName('VEHICLES'); if(!sh) return {success:false,error:'Not found'};
+  const {row_index,reg_no,branch,type,expire_date,owner,status,notes}=body;
+  const row=[reg_no,branch,type,expire_date?new Date(expire_date):'',owner,status,notes||''];
+  if(row_index) sh.getRange(Number(row_index),1,1,7).setValues([row]); else sh.appendRow(row);
+  return {success:true};
+}
+
+function updateTaxStatus(ss,body){
+  const sh=ss.getSheetByName('TAX_CALENDAR'); if(!sh) return {success:false,error:'Not found'};
+  const data=sh.getDataRange().getValues();
+  const {month,tax_type,amount,deadline,filed_date,status,notes}=body;
+  for(let i=1;i<data.length;i++){
+    if(data[i][0]===month&&data[i][1]===tax_type){
+      sh.getRange(i+1,1,1,7).setValues([[month,tax_type,Number(amount)||0,deadline?new Date(deadline):'',filed_date?new Date(filed_date):'',status,notes||'']]);
+      return {success:true};
+    }
+  }
+  sh.appendRow([month,tax_type,Number(amount)||0,deadline?new Date(deadline):'',filed_date?new Date(filed_date):'',status,notes||'']);
+  return {success:true};
+}
+
+function initSheets(ss){
+  const sheets={
+    'POS_DATA':['date','amount','description','branch','ref_no','type'],
+    'JOURNAL_ENTRIES':['date','voucher_no','account_code','account_name','debit','credit','description','branch'],
+    'VOUCHERS':['date','voucher_no','payee','amount','category','description','branch','status','created_at'],
+    'VEHICLES':['reg_no','branch','type','expire_date','owner','status','notes'],
+    'TAX_CALENDAR':['month','tax_type','amount','deadline','filed_date','status','notes'],
+    'RECONCILE_LOG':['run_at','month','matched','unmatched_bank','unmatched_pos','total_bank','total_pos'],
+    'CHART_OF_ACCOUNTS':['code','name','type','normal_balance']
+  };
+  const coa=[['1101','เงินสด','สินทรัพย์','Dr'],['1102','เงินฝากธนาคาร','สินทรัพย์','Dr'],
+    ['1201','ลูกหนี้การค้า','สินทรัพย์','Dr'],['1301','สินค้าคงเหลือ-รถ','สินทรัพย์','Dr'],
+    ['1302','สินค้าคงเหลือ-อะไหล่','สินทรัพย์','Dr'],['1401','ภาษีซื้อ','สินทรัพย์','Dr'],
+    ['2101','เจ้าหนี้การค้า','หนี้สิน','Cr'],['2201','เงินกู้ยืม','หนี้สิน','Cr'],
+    ['2302','ภาษีหัก ณ ที่จ่ายค้างจ่าย','หนี้สิน','Cr'],['2303','ประกันสังคมค้างจ่าย','หนี้สิน','Cr'],
+    ['3101','ทุน','ส่วนของเจ้าของ','Cr'],
+    ['4101','รายได้จากการขายรถ','รายได้','Cr'],['4102','รายได้จากการขายอะไหล่','รายได้','Cr'],['4103','รายได้ค่าบริการ','รายได้','Cr'],
+    ['5101','ต้นทุนขายรถ','ต้นทุน','Dr'],['5102','ต้นทุนขายอะไหล่','ต้นทุน','Dr'],['5103','ต้นทุนบริการ','ต้นทุน','Dr'],
+    ['6101','เงินเดือนและค่าแรง','ค่าใช้จ่าย','Dr'],['6102','ค่าเช่าสถานที่','ค่าใช้จ่าย','Dr'],
+    ['6103','ค่าสาธารณูปโภค','ค่าใช้จ่าย','Dr'],['6104','ค่าโฆษณาและการตลาด','ค่าใช้จ่าย','Dr'],
+    ['6105','ค่าขนส่ง','ค่าใช้จ่าย','Dr'],['6106','ดอกเบี้ยจ่าย','ค่าใช้จ่าย','Dr'],
+    ['6199','ค่าใช้จ่ายอื่นๆ','ค่าใช้จ่าย','Dr']];
+  const created=[];
+  for(const [name,headers] of Object.entries(sheets)){
+    let sh=ss.getSheetByName(name);
+    if(!sh){
+      sh=ss.insertSheet(name);
+      sh.getRange(1,1,1,headers.length).setValues([headers]).setFontWeight('bold');
+      if(name==='CHART_OF_ACCOUNTS') sh.getRange(2,1,coa.length,4).setValues(coa);
+      created.push(name);
+    }
+  }
+  return {success:true,created,message:created.length?'สร้าง Sheets: '+created.join(', '):'ทุก Sheet มีอยู่แล้ว'};
+}`;
+
+  // ─── State ──────────────────────────────────────────────────────────────────
+  let savedSheetId = '';
+  let savedToken   = '';
+
+  // On load: restore saved config
+  window.addEventListener('DOMContentLoaded', () => {
+    const cfg = loadStoredConfig();
+    if (cfg.apiUrl && cfg.token) {
+      document.getElementById('apiUrl').value   = cfg.apiUrl;
+      document.getElementById('apiToken').value = cfg.token;
+    }
+    document.getElementById('codeBlock').textContent = GAS_CODE
+      .replace('{{SHEET_ID}}', 'ใส่ Spreadsheet ID')
+      .replace('{{TOKEN}}', 'MOTO_ADDICT_2024');
+
+    // If already configured → skip to step 3
+    if (cfg.apiUrl) {
+      unlockStep('step2');
+      unlockStep('step3');
+      updateProgress(3);
+    }
+  });
+
+  function loadStoredConfig() {
+    try { return JSON.parse(localStorage.getItem('motoFinanceConfig') || '{}'); } catch(_) { return {}; }
+  }
+
+  // ─── Step 1: Validate Sheet ID ──────────────────────────────────────────────
+  function validateSheetId() {
+    const raw = document.getElementById('sheetId').value.trim();
+    if (!raw) { showAlert('กรุณาใส่ Spreadsheet ID', 'error'); return; }
+
+    // Accept full URL or just the ID
+    const match = raw.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    const id    = match ? match[1] : raw;
+
+    if (id.length < 20) { showAlert('ID ไม่ถูกต้อง — ควรยาวกว่านี้', 'error'); return; }
+
+    savedSheetId = id;
+
+    // Update code with real sheet ID
+    const token = document.getElementById('apiToken').value || 'MOTO_ADDICT_2024';
+    document.getElementById('codeBlock').textContent = GAS_CODE
+      .replace('{{SHEET_ID}}', id)
+      .replace('{{TOKEN}}', token);
+
+    unlockStep('step1', true);
+    unlockStep('step2');
+    updateProgress(2);
+    showAlert('บันทึก Spreadsheet ID แล้ว! ไปขั้นตอน 2 ด้านล่าง', 'success');
+
+    // Scroll to step 2
+    document.getElementById('step2').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // ─── Step 2: Copy Code ──────────────────────────────────────────────────────
+  function copyCode() {
+    const code = document.getElementById('codeBlock').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      showAlert('คัดลอกโค้ดแล้ว! วางใน Apps Script Editor', 'success');
+      // After copy, unlock step 3
+      unlockStep('step3');
+      updateProgress(3);
+    }).catch(() => {
+      showAlert('คัดลอกไม่สำเร็จ — เลือกข้อความในกล่องแล้ว Ctrl+C', 'error');
+    });
+  }
+
+  // ─── Generate Token ─────────────────────────────────────────────────────────
+  function generateToken() {
+    const t = 'MA_' + Math.random().toString(36).substring(2,10).toUpperCase() + '_' + Date.now().toString(36).toUpperCase();
+    document.getElementById('apiToken').value = t;
+    document.getElementById('tokenReminder').classList.remove('hidden');
+    document.getElementById('tokenCodeLine').textContent = `const SECRET_TOKEN = '${t}';`;
+    // Update code block
+    const id = savedSheetId || '{{SHEET_ID}}';
+    document.getElementById('codeBlock').textContent = GAS_CODE
+      .replace('{{SHEET_ID}}', id)
+      .replace('{{TOKEN}}', t);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('apiToken').addEventListener('input', function() {
+      if (this.value.length > 5) {
+        document.getElementById('tokenReminder').classList.remove('hidden');
+        document.getElementById('tokenCodeLine').textContent = `const SECRET_TOKEN = '${this.value}';`;
+      }
+    });
+  });
+
+  // ─── Step 3: Test Connection ────────────────────────────────────────────────
+  async function testConnection() {
+    const url   = document.getElementById('apiUrl').value.trim();
+    const token = document.getElementById('apiToken').value.trim();
+
+    if (!url) { showAlert('กรุณาใส่ Web App URL', 'error'); return; }
+    if (!url.includes('script.google.com')) {
+      showAlert('URL ต้องเป็น script.google.com/macros/s/...', 'error'); return;
+    }
+
+    const resultEl = document.getElementById('testResult');
+    resultEl.className = 'rounded-xl p-4 text-sm bg-blue-50 text-blue-700';
+    resultEl.innerHTML = '⏳ กำลังทดสอบการเชื่อมต่อ...';
+    resultEl.classList.remove('hidden');
+
+    try {
+      // Test: call initSheets (creates sheets if not exist, harmless if exist)
+      const testUrl = `${url}?token=${encodeURIComponent(token)}&action=initSheets`;
+      const res = await fetch(testUrl);
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      if (!data.success) throw new Error(data.error || 'Unknown error');
+
+      // SUCCESS
+      resultEl.className = 'rounded-xl p-4 text-sm bg-green-50 border border-green-200 text-green-800';
+      resultEl.innerHTML = `
+        <p class="font-bold mb-1">✅ เชื่อมต่อสำเร็จ!</p>
+        <p class="text-xs">${data.message || 'Google Sheets พร้อมใช้งาน'}</p>`;
+
+      // Save config
+      const config = { apiUrl: url, token, sheetId: savedSheetId, savedAt: new Date().toISOString() };
+      localStorage.setItem('motoFinanceConfig', JSON.stringify(config));
+
+      // Update step 4
+      document.getElementById('successDetail').textContent = `API URL: ${url.substring(0,60)}...`;
+      document.getElementById('sheetsList').textContent = data.created && data.created.length
+        ? data.created.join(', ')
+        : 'ทุก Sheet มีอยู่แล้ว ✓';
+
+      unlockStep('step3', true);
+      unlockStep('step4');
+      updateProgress(4);
+
+      document.getElementById('step4').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      showAlert('บันทึกการตั้งค่าเรียบร้อย! ระบบพร้อมใช้งาน', 'success');
+
+    } catch (err) {
+      resultEl.className = 'rounded-xl p-4 text-sm bg-red-50 border border-red-200 text-red-800';
+      resultEl.innerHTML = `
+        <p class="font-bold mb-1">❌ เชื่อมต่อไม่สำเร็จ</p>
+        <p class="text-xs mb-2">${err.message}</p>
+        <div class="text-xs space-y-1 text-red-700">
+          <p>• ตรวจสอบว่า Deploy ถูกต้อง (Who can access = <strong>Anyone</strong>)</p>
+          <p>• Token ต้องตรงกับใน Code.gs</p>
+          <p>• ลอง Deploy ใหม่เป็น New deployment</p>
+        </div>`;
+    }
+  }
+
+  // ─── UI Helpers ─────────────────────────────────────────────────────────────
+  function unlockStep(id, markDone = false) {
+    const el = document.getElementById(id);
+    el.classList.remove('opacity-50', 'pointer-events-none', 'step-todo');
+    el.classList.add(markDone ? 'step-done' : 'step-active');
+  }
+
+  function updateProgress(currentStep) {
+    for (let i = 1; i <= 4; i++) {
+      const pill = document.getElementById(`pill${i}`);
+      pill.classList.remove('bg-green-500', 'bg-blue-500', 'bg-gray-200');
+      if (i < currentStep)       pill.classList.add('bg-green-500');
+      else if (i === currentStep) pill.classList.add('bg-blue-500');
+      else                        pill.classList.add('bg-gray-200');
+    }
+    document.getElementById('progressLabel').textContent = `ขั้นตอนที่ ${currentStep} จาก 4`;
+  }
+
+  function showAlert(msg, type) {
+    const el = document.getElementById('alert');
+    el.className = `fixed top-4 right-4 z-50 px-5 py-3 rounded-lg shadow-lg text-white font-medium text-sm max-w-xs ${
+      type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+    }`;
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 4000);
+  }
+
+  updateProgress(1);
+
+  // ─── Quick Setup (new device) ───────────────────────────────────────────────
+  function quickSetup() {
+    unlockStep('step1', true);
+    unlockStep('step2', true);
+    unlockStep('step3');
+    updateProgress(3);
+    document.getElementById('step3').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    showAlert('ใส่ Web App URL + Token แล้วกด "ทดสอบการเชื่อมต่อ"', 'info');
+  }
+  </script>
+</body>
+</html>
